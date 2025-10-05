@@ -14,7 +14,7 @@ End-to-end demo to intercept LLM queries, detect semantic duplicates, and serve 
 
 ```bash
 pip install -r requirements.txt
-````
+```
 ## Create your `.env` from the example
 
 ```bash
@@ -23,7 +23,7 @@ copy .env.example .env
 
 # mac/linux
 cp .env.example .env
-````
+```
 Then edit `.env` and paste your key.
 
 ## Required environment variables
@@ -34,7 +34,7 @@ EMB_RPM=10
 GEN_MODEL_NAME=models/gemini-2.5-flash
 EMBEDDING_MODEL=text-embedding-004
 # Optional: NO_LLM=0  # set 1 to avoid LLM calls when quota is tight
-````
+```
 Security: `.env` is git-ignored; only `.env.example` is public.
 
 # Run
@@ -42,7 +42,7 @@ Security: `.env` is git-ignored; only `.env.example` is public.
 
 ```bash
 python semantic_cache_demo.py --scenario retail --warmstart all
-````
+```
 ## Recommended showcase (balanced)
 ```bash
 python semantic_cache_demo.py --scenario retail --warmstart all --alpha=0.2 --threshold=0.40 --tag-thr=0.30 --topk=5
@@ -120,7 +120,9 @@ Mitigations: conversation segmentation with per-segment summaries; state schema;
 ## 7.2 Agent caching proposal
 
 Cache tool I/O (inputs→outputs), subgoal summaries, and final answers.
+
 Cache key = embedding(goal + subgoal + tool + doc_id) plus hashes (schema/version).
+
 Evict by TTL/heat; invalidate along dependency graph when datasets/code versions change.
 
 ## 7.3 Embedding dimension trade-off
@@ -135,12 +137,13 @@ Use random projection/PCA to simulate `768 → 384 → 256 → 128`; report Reca
 - Security: never commit your real `.env` (keep only `.env.example` in repo).
 
 # Repo structure
+```text
 semantic_cache_demo.py
 embedder.py / cache_index.py / session_store.py / context_builder.py
 topic_tagger.py
 .env.example
 requirements.txt
 scripts/ (optional)  └─ dim_sweep.py
-
+````
 # License
 MIT
