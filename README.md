@@ -119,35 +119,43 @@ Optional: run each scenario a second time and append “Round 2” here — the 
 
 ## Why dual indices?
 
-Canonical captures intent invariants; context captures conversational reference. Blending prevents one side from dominating.
+The canonical index captures intent-level invariants, while the context index preserves conversational references.
+
+Blending them prevents over-reliance on either the literal phrasing or the surrounding context, achieving more balanced reuse.
 
 ## Cache content
 
-Store: canonical text, context text, both embeddings, answer, topic tag.
+Each cache entry stores:
 
-# Metrics to report (repro steps)
+- canonical text
+- context text
+- both embeddings
+- generated answer
+- topic tag
 
-For each scenario, run two rounds with the same params:
-Round 1 (with warmstart) → Round 2 (benefits from new writes).
+# Metrics and Reproducibility
 
-Record:
+To reproduce results, run two rounds per scenario:
 
-- Requests, Hit rate, Avg latency (hit/miss)
-- Avoided LLM calls = number of hits(≈ `Hit rate × Requests`)
-- (Optional) Estimated cost saved = avoided_calls × per-call unit cost (or tokens × unit price)
+**Round 1** (with warmstart) → **Round 2** (benefits from newly cached entries).
 
-**Example calculation (replace with your measured values)** 
-Assume: `hit_rate ≈ 0.67`, `hit_latency ≈ 0.01s`, `miss_latency ≈ 10–16s`
+Record the following metrics:
 
-Average latency
-`avg_latency ≈ (hit_rate × hit_latency) + (1 - hit_rate) × miss_latency`
+- Requests count
+- Hit rate
+- Average latency (hit/miss)
+- Avoided LLM calls = `Hit rate × Requests`
+- _(Optional)_ Estimated cost saved = avoided_calls × per-call cost
 
-If `miss_latency = 10s`: `0.67×0.01 + 0.33×10 ≈ 3.31s` → from 10s down to ~3.3s (↓ ~66%)
+**Example Calculation** 
+If `hit_rate ≈ 0.67`, `hit_latency ≈ 0.01s`, and `miss_latency ≈ 10–16s`:
 
-If `miss_latency = 16s`: `0.67×0.01 + 0.33×16 ≈ 5.29s` → from 16s down to ~5.3s (↓ ~67%)
+    avg_latency=(hit_rate×hit_latency)+(1−hit_rate)×miss_latency 
+    
+For `miss_latency = 10s`: average latency ≈ 3.3s → ~66% faster than baseline.
+For `miss_latency = 16s`: average latency ≈ 5.3s → ~67% faster.
 
-One-line summary (example): HIT ≈ 0.01s, MISS ≈ 10–16s, Hit rate ≈ 0.67 → average latency ↓ ~50–70%, avoided LLM calls ≈ ~2/3.
-
+Summary: `HIT ≈ 0.01s`, `MISS ≈ 10–16s`, `Hit rate ≈ 0.67` → average latency reduced by ~50–70%, avoiding ~⅔ of LLM calls.
 # Sensitivity / Trade-offs (optional)
 
 These two presets illustrate the precision–reuse trade-off.  
@@ -173,13 +181,13 @@ Notes
 
 <!-- Optional, if you want a one-liner for deeper tuning --> <!-- Advanced tuning (optional): `--threshold` 0.30–0.80, `--tag-thr` 0.25–0.60, `--alpha` 0.2–0.5, `--topk` 5–7. -->
 
-# Scalability & Eviction (proposal)
+# Scalability & Eviction
 
-- Index: swap NumPy search for FAISS (IVF/HNSW) or Redis Vector for million-scale.
-- Eviction: LRU + TTL + heat (recent hits) hybrid score; short TTL for one-off queries, long TTL for FAQ.
-- Freshness: store source/versions; check before reuse.
+To scale beyond this prototype, the NumPy-based search could be replaced with FAISS (IVF/HNSW) or a Redis Vector index to handle millions of cached embeddings efficiently.
+For eviction, a hybrid strategy combining LRU, TTL, and recent-hit “heat” scores could balance recency and importance — for instance, using shorter TTLs for one-off queries and longer TTLs for frequently reused FAQs.
+To ensure freshness, each cache entry could store the source or data version and be revalidated before reuse.
 
-# Optional / Future work (not implemented)
+# Optional / Future work
 
 - **Limitations of simple context**: The current context strategy works well for short conversations but struggles when topics drift or when the task has multiple subgoals.
 It also lacks awareness of freshness or versioning (e.g., when data sources change).
