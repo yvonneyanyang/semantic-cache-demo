@@ -1,6 +1,6 @@
 # Semantic Cache Demo (DSRS Screening Test)
 
-End-to-end demo to intercept LLM queries, detect semantic duplicates, and serve cached answers to reduce **latency** and **cost**.
+This project is an end-to-end demo that intercepts LLM queries, detects semantically similar inputs, and reuses cached answers to reduce **latency** and **cost**.
 
 ## TL;DR
 - **Dual index**: canonical question & context-aware text  
@@ -11,6 +11,7 @@ End-to-end demo to intercept LLM queries, detect semantic duplicates, and serve 
 ---
 
 # Setup
+To get started, install the required packages and create your `.env` file for API access.
 
 ```bash
 pip install -r requirements.txt
@@ -41,7 +42,7 @@ Security: `.env` is git-ignored; only `.env.example` is public.
 python semantic_cache_demo.py --scenario retail --warmstart all --alpha=0.2 --threshold=0.40 --tag-thr=0.30 --topk=5
 ```
 
-## What you’ll see
+## When you run the script, the console will log whether each query was served from cache (`[HIT]`) or required a real LLM call (`[MISS]`).
 
 - `[HIT ...]` → served from cache (≈0.01s)
 
@@ -55,6 +56,7 @@ python semantic_cache_demo.py --scenario finance --warmstart all --alpha=0.2 --t
 ````
 
 ## Results (measured)
+The following results summarize measured latency reductions and cache efficiency across three sample scenarios. Each test was run once with warm-started seeds.
 
 **How to reproduce (all scenarios)**
 
@@ -101,11 +103,13 @@ Round 1:
 - Avoided LLM calls (hits): **2**
 - Average latency: `0.67×0.010 + 0.33×5.544 ≈ 1.836 s` → vs. 5.544 s baseline ⇒ **~66.9% reduction**
 
-_Sensitivity note_: The elliptical follow-up “Could you show the same for 7%?” already hits with the current tagger (tag=0.33).  
-The query “What if I invest monthly 200 dollars?” has tag≈0.22; either (a) run with `--tag-thr=0.20` or (b) shorten topic tags to ~4 tokens (digits and
-keywords first) so it becomes a hit without loosening the gate.
+_Note on sensitivity_:
+In the finance scenario, the follow-up “Could you show the same for 7%?” already qualifies as a hit under the current tag threshold (`tag=0.33`).
+However, “What if I invest monthly 200 dollars?” has a lower tag similarity (`≈0.22`); this can be addressed by either lowering `--tag-thr` to 0.20 or shortening topic tags to the first 3–4 key tokens (e.g., digits and main keywords).
 
 Optional: run each scenario a second time and append “Round 2” here — the hit rate typically increases because newly written entries are reused.
+
+**Across all scenarios, semantic caching consistently reduced latency by roughly 65–70%, with 1–2 cache hits per 3 requests, demonstrating strong reuse efficiency even with conservative thresholds.**
 
 # How it works (design choices)
 ## Pipeline
