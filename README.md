@@ -213,7 +213,9 @@ embedder.py / cache_index.py / session_store.py / context_builder.py
 topic_tagger.py
 .env.example
 requirements.txt
-scripts/ (optional)  └─ dim_sweep.py
+LICENSE
+README.md
+.gitignore
 ````
 # License
 MIT
