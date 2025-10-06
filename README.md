@@ -20,9 +20,6 @@ pip install -r requirements.txt
 ```bash
 # Windows
 copy .env.example .env
-
-# mac/linux
-cp .env.example .env
 ```
 Then edit `.env` and paste your key.
 
@@ -38,15 +35,12 @@ EMBEDDING_MODEL=text-embedding-004
 Security: `.env` is git-ignored; only `.env.example` is public.
 
 # Run
-## Warm-start (embeddings only)
+## One-line recommended run
 
-```bash
-python semantic_cache_demo.py --scenario retail --warmstart all
-```
-## Recommended showcase (balanced)
 ```bash
 python semantic_cache_demo.py --scenario retail --warmstart all --alpha=0.2 --threshold=0.40 --tag-thr=0.30 --topk=5
 ```
+
 ## What you’ll see
 
 - `[HIT ...]` → served from cache (≈0.01s)
@@ -59,6 +53,55 @@ python semantic_cache_demo.py --scenario retail --warmstart all --alpha=0.2 --th
 python semantic_cache_demo.py --scenario agri --warmstart all --alpha=0.2 --threshold=0.40 --tag-thr=0.30 --topk=5
 python semantic_cache_demo.py --scenario finance --warmstart all --alpha=0.2 --threshold=0.40 --tag-thr=0.30 --topk=5
 ````
+
+## Results (measured)
+
+**How to reproduce (all scenarios)**
+
+### Windows PowerShell
+```bash
+foreach ($s in 'retail','agri','finance') {
+  python semantic_cache_demo.py --scenario $s --warmstart all --alpha=0.2 --threshold=0.40 --tag-thr=0.30 --topk=5
+}
+```
+
+Scenario: retail
+
+Params: `alpha=0.2, threshold=0.40, tag-thr=0.30, topk=5`
+
+Round 1:
+- Requests: **3**
+- Hit rate: **0.67**
+- Avg latency (hit): **0.010 s**
+- Avg latency (miss): **4.277 s**
+- Avoided LLM calls (hits): **2**
+- Average latency: `0.67×0.010 + 0.33×4.277 ≈ 1.42 s` → vs. 4.277 s baseline ⇒ ~66.8% reduction
+
+Scenario: agri
+
+Params: `alpha=0.2, threshold=0.40, tag-thr=0.30, topk=5`
+
+Round 1:
+- Requests: **3**
+- Hit rate: **0.67**
+- Avg latency (hit): **0.010 s**
+- Avg latency (miss): **1.663 s**
+- Avoided LLM calls (hits): **2**
+- Average latency: `0.67×0.010 + 0.33×1.663 ≈ 0.56 s` → vs. 1.663 s baseline ⇒ ~66.6% reduction
+
+Scenario: finance
+
+Params: `alpha=0.2, threshold=0.40, tag-thr=0.30, topk=5`
+
+Round 1:
+- Requests: **3**
+- Hit rate: **0.33**
+- Avg latency (hit): **0.010 s**
+- Avg latency (miss): **4.557 s**
+- Avoided LLM calls (hits): **1**
+- Average latency: `0.33×0.010 + 0.67×4.557 ≈ 3.06 s` → vs. 4.557 s baseline ⇒ ~33.0% reduction
+
+Optional: run each scenario a second time and append “Round 2” here — the hit rate typically increases because newly written entries are reused.
 
 # How it works (design choices)
 ## Pipeline
@@ -101,18 +144,30 @@ If `miss_latency = 16s`: `0.67×0.01 + 0.33×16 ≈ 5.29s` → from 16s down to 
 
 One-line summary (example): HIT ≈ 0.01s, MISS ≈ 10–16s, Hit rate ≈ 0.67 → average latency ↓ ~50–70%, avoided LLM calls ≈ ~2/3.
 
-# Sensitivity / Trade-offs
+# Sensitivity / Trade-offs (optional)
 
-Try:
+These two presets illustrate the precision–reuse trade-off.  
+Pick **one** to test; the default remains the **One-line recommended run** above.
 
-- `threshold`: `0.30 → 0.60 → 0.80`
-- `tag-thr`: `0.0 → 0.3 → 0.6`
-- `alpha`: `0.2–0.5`
+**Strict (precision first; lower hit rate)**
+```bash
+python semantic_cache_demo.py --scenario retail --warmstart all --alpha=0.3 --threshold=0.60 --tag-thr=0.50 --topk=5
+```
 
-Observation:
+**Looser (higher hit rate; rely more on topic gate)**
+```bash
+python semantic_cache_demo.py --scenario retail --warmstart all --alpha=0.2 --threshold=0.35 --tag-thr=0.25 --topk=7
+```
 
-- Stricter thresholds → fewer hits, lower risk of wrong reuse
-- Looser thresholds → more hits, higher risk; Jaccard gate helps control errors
+Notes
+
+- Stricter thresholds → fewer hits, lower risk of wrong reuse.
+
+- Looser thresholds → more hits; use the Jaccard topic gate (`tag-thr`) to control false reuse.
+
+- To try other domains, change `--scenario` to `agri` or `finance`.
+
+<!-- Optional, if you want a one-liner for deeper tuning --> <!-- Advanced tuning (optional): `--threshold` 0.30–0.80, `--tag-thr` 0.25–0.60, `--alpha` 0.2–0.5, `--topk` 5–7. -->
 
 # Scalability & Eviction (proposal)
 
