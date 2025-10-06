@@ -46,7 +46,7 @@ python semantic_cache_demo.py --scenario retail --warmstart all
 ## Recommended showcase (balanced)
 ```bash
 python semantic_cache_demo.py --scenario retail --warmstart all --alpha=0.2 --threshold=0.40 --tag-thr=0.30 --topk=5
-````
+```
 ## What you’ll see
 
 - `[HIT ...]` → served from cache (≈0.01s)
@@ -86,8 +86,20 @@ Round 1 (with warmstart) → Round 2 (benefits from new writes).
 Record:
 
 - Requests, Hit rate, Avg latency (hit/miss)
-- Avoided LLM calls = number of hits
-- (Optional) Estimated cost saved = avoided_calls × per-call unit cost
+- Avoided LLM calls = number of hits(≈ `Hit rate × Requests`)
+- (Optional) Estimated cost saved = avoided_calls × per-call unit cost (or tokens × unit price)
+
+**Example calculation (replace with your measured values)** 
+Assume: `hit_rate ≈ 0.67`, `hit_latency ≈ 0.01s`, `miss_latency ≈ 10–16s`
+
+Average latency
+`avg_latency ≈ (hit_rate × hit_latency) + (1 - hit_rate) × miss_latency`
+
+If `miss_latency = 10s`: `0.67×0.01 + 0.33×10 ≈ 3.31s` → from 10s down to ~3.3s (↓ ~66%)
+
+If `miss_latency = 16s`: `0.67×0.01 + 0.33×16 ≈ 5.29s` → from 16s down to ~5.3s (↓ ~67%)
+
+One-line summary (example): HIT ≈ 0.01s, MISS ≈ 10–16s, Hit rate ≈ 0.67 → average latency ↓ ~50–70%, avoided LLM calls ≈ ~2/3.
 
 # Sensitivity / Trade-offs
 
@@ -108,27 +120,12 @@ Observation:
 - Eviction: LRU + TTL + heat (recent hits) hybrid score; short TTL for one-off queries, long TTL for FAQ.
 - Freshness: store source/versions; check before reuse.
 
-# Bonus
-## 7.1 Limitations of simple context
-
-- Topic shifts in long chats → semantic drift
-- Task state not captured (goal/subgoal/progress)
-- Data freshness/version not encoded
-
-Mitigations: conversation segmentation with per-segment summaries; state schema; metadata/TTL checks.
-
-## 7.2 Agent caching proposal
-
-Cache tool I/O (inputs→outputs), subgoal summaries, and final answers.
-
-Cache key = embedding(goal + subgoal + tool + doc_id) plus hashes (schema/version).
-
-Evict by TTL/heat; invalidate along dependency graph when datasets/code versions change.
-
-## 7.3 Embedding dimension trade-off
-
-Use random projection/PCA to simulate `768 → 384 → 256 → 128`; report Recall@k & RAM.
-(If included, see `scripts/dim_sweep.py`.)
+# Optional / Future work (not implemented)
+## Limitations of simple context
+- **Limitations of simple context**: topic shifts (semantic drift), missing task state (goal/subgoal/progress), freshness/version not encoded.
+  Mitigations: conversation segmentation + per-segment summaries; state schema; metadata/TTL checks.
+- **Agent caching proposal**: cache tool I/O, subgoal summaries, and final answers; key = embedding(goal+subgoal+tool+doc_id) + hashes(schema/version); TTL/heat eviction; dependency invalidation on dataset/code version changes.
+- **Embedding dimension trade-off**: simulate `768 → 384 → 256 → 128` via random projection/PCA; report Recall@k & RAM (see `scripts/dim_sweep.py` if added).
 
 # Troubleshooting
 
