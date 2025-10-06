@@ -181,10 +181,12 @@ Notes
 
 # Optional / Future work (not implemented)
 
-- **Limitations of simple context**: topic shifts (semantic drift), missing task state (goal/subgoal/progress), freshness/version not encoded.
-  Mitigations: conversation segmentation + per-segment summaries; state schema; metadata/TTL checks.
-- **Agent caching proposal**: cache tool I/O, subgoal summaries, and final answers; key = embedding(goal+subgoal+tool+doc_id) + hashes(schema/version); TTL/heat eviction; dependency invalidation on dataset/code version changes.
-- **Embedding dimension trade-off**: simulate `768 → 384 → 256 → 128` via random projection/PCA; report Recall@k & RAM (see `scripts/dim_sweep.py` if added).
+- **Limitations of simple context**: The current context strategy works well for short conversations but struggles when topics drift or when the task has multiple subgoals.
+It also lacks awareness of freshness or versioning (e.g., when data sources change).
+Possible mitigations include segmenting long conversations, summarizing each segment, defining explicit state schemas, and using metadata or TTL checks to ensure validity.
+- **Agent caching proposal**: In future work, the cache could also store intermediate agent steps such as tool inputs/outputs or subgoal summaries, not just final answers.
+A possible cache key could combine the user’s goal, subgoal, and the tool name, while eviction could depend on recent usage (heat) or a fixed TTL. When datasets or code versions change, cached items could be invalidated automatically.
+- **Embedding dimension trade-off**: Another potential extension would be testing lower-dimension embeddings (e.g., 768 → 384 → 256 → 128) using random projection or PCA, and comparing Recall@k and memory usage.
 
 # Troubleshooting
 
