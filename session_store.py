@@ -23,7 +23,6 @@ class SessionStore:
         """Return the last k turns for this session (empty list if not found)."""
         return self._hist[session_id][-k:]
 
-print("[API] Using key:", (API_KEY[:8] + "..." + API_KEY[-4:]) if API_KEY else "None")
 # In[ ]:
 
 
