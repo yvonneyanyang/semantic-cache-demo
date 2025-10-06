@@ -250,10 +250,28 @@ def canonicalize(model: genai.GenerativeModel, history: List[Dict[str,str]], use
     return _normalize_terms(user_query)
 
 def make_topic_tag(text: str) -> str:
-    """Ultra-simple tag from canonical text: keep nouns-ish keywords."""
-    t = _normalize_terms(text)
-    tokens = [w for w in re.findall(r"[a-z]+", t) if w not in {"the","a","an","of","in","to","is","are"}]
-    return " ".join(tokens[:6])
+    """
+    Keep numeric + unit/finance keywords first, drop fillers,
+    and cap to 4 tokens to avoid diluting Jaccard.
+    """
+    t = _normalize_terms(text)                     # e.g., "7%" -> "7 percent"
+    toks = re.findall(r"[a-z0-9]+", t)             # keep digits too
+
+    STOP = {
+        "the","a","an","of","in","to","is","are","at",
+        "you","your","could","show","same","for","what","if",
+        "please","tell","explain","i","invest"
+    }
+    toks = [w for w in toks if w not in STOP]
+
+    # numbers first, then key finance tokens, then others
+    nums = [w for w in toks if w.isdigit()]
+    KEYS = {"percent","monthly","year","years","rate","compounded","contribution","deposit","payment"}
+    keys = [w for w in toks if w in KEYS]
+    rest = [w for w in toks if w not in set(nums) | set(KEYS)]
+
+    ordered = nums + keys + rest
+    return " ".join(ordered[:4])                   # ← cap to 4
 
 def tag_similarity(tag1: str, tag2: str) -> float:
     """Jaccard similarity on token sets; fast & cheap for a gate."""
@@ -302,6 +320,10 @@ FAQ_SEEDS = {
          "At 7% annually for 10 years: FV = PV*(1.07)^10 (≈1.967x)."),
         ("compound interest with monthly 200 dollars contribution",
          "Monthly $200 at 5%/yr compounded monthly: FV ≈ 200*((1+0.05/12)^(12*Y)-1)/(0.05/12)."),
+        ("compound interest with monthly 200 dollars contribution at 7 percent",
+         "Monthly $200 at 7%/yr compounded monthly: FV ≈ 200*((1+0.07/12)^(12*Y)-1)/(0.07/12)."),
+        ("compare compound interest 10 years at 5 percent vs 7 percent",
+         "10-year growth: 5% → (1.05)^10 ≈ 1.629x; 7% → (1.07)^10 ≈ 1.967x (≈ +20.8%)."),
     ],
     "retail": [
         ("reduce retail shrink practical tips",
