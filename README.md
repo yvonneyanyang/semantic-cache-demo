@@ -180,7 +180,7 @@ Notes
 - Freshness: store source/versions; check before reuse.
 
 # Optional / Future work (not implemented)
-## Limitations of simple context
+
 - **Limitations of simple context**: topic shifts (semantic drift), missing task state (goal/subgoal/progress), freshness/version not encoded.
   Mitigations: conversation segmentation + per-segment summaries; state schema; metadata/TTL checks.
 - **Agent caching proposal**: cache tool I/O, subgoal summaries, and final answers; key = embedding(goal+subgoal+tool+doc_id) + hashes(schema/version); TTL/heat eviction; dependency invalidation on dataset/code version changes.
