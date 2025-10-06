@@ -59,13 +59,13 @@ python semantic_cache_demo.py --scenario finance --warmstart all --alpha=0.2 --t
 **How to reproduce (all scenarios)**
 
 ### Windows PowerShell
-```bash
+```powershell
 foreach ($s in 'retail','agri','finance') {
   python semantic_cache_demo.py --scenario $s --warmstart all --alpha=0.2 --threshold=0.40 --tag-thr=0.30 --topk=5
 }
 ```
 
-Scenario: retail
+### Scenario: retail
 
 Params: `alpha=0.2, threshold=0.40, tag-thr=0.30, topk=5`
 
@@ -77,7 +77,7 @@ Round 1:
 - Avoided LLM calls (hits): **2**
 - Average latency: `0.67×0.010 + 0.33×4.277 ≈ 1.42 s` → vs. 4.277 s baseline ⇒ ~66.8% reduction
 
-Scenario: agri
+### Scenario: agri
 
 Params: `alpha=0.2, threshold=0.40, tag-thr=0.30, topk=5`
 
@@ -89,7 +89,7 @@ Round 1:
 - Avoided LLM calls (hits): **2**
 - Average latency: `0.67×0.010 + 0.33×1.663 ≈ 0.56 s` → vs. 1.663 s baseline ⇒ ~66.6% reduction
 
-Scenario: finance
+### Scenario: finance
 
 Params: `alpha=0.2, threshold=0.40, tag-thr=0.30, topk=5`
 
@@ -163,7 +163,7 @@ Notes
 
 - Stricter thresholds → fewer hits, lower risk of wrong reuse.
 
-- Looser thresholds → more hits; use the Jaccard topic gate (`tag-thr`) to control false reuse.
+- Looser thresholds → more hits; use the Jaccard topic gate (`--tag-thr`) to control false reuse.
 
 - To try other domains, change `--scenario` to `agri` or `finance`.
 
