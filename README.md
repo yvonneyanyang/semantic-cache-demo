@@ -1,4 +1,4 @@
-# Semantic Cache Demo (DSRS Screening Test)
+# Semantic Cache Demo (DSRS)
 
 This project is an end-to-end demo that intercepts LLM queries, detects semantically similar inputs, and reuses cached answers to reduce **latency** and **cost**.
 
